@@ -1,0 +1,21 @@
+{
+    "manifest_version": 3,
+    "name": "Moodle File Downloader",
+    "version": "1.0",
+    "description": "Automatically download all files from a Moodle page.",
+    "permissions": ["downloads", "activeTab", "scripting", "storage"],
+    "host_permissions": ["https://www.uni-muenster.de/LearnWeb/learnweb2/*"],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_popup": "popup.html"
+    },
+    "content_scripts": [
+      {
+        "matches": ["https://www.uni-muenster.de/LearnWeb/learnweb2/*"],
+        "js": ["content.js"]
+      }
+    ]
+  }
+  
