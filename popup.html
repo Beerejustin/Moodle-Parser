@@ -1,16 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Moodle Downloader</title>
-  <link rel="stylesheet" type="text/css" href="popup.css">
-  <script src="popup.js"></script>
+  <link rel="stylesheet" href="popup.css">
+  <script src="popup.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <h2>Moodle File Downloader</h2>
-    <div id="fileList"></div>
-    <button id="selectAllBtn">Select All</button>
-    <button id="downloadBtn">Download Selected Files</button>
+    <header>
+      <div class="logo">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+      </div>
+      <h1>Moodle Downloader</h1>
+    </header>
+    
+    <div class="content">
+        <div class="file-counter">
+          <span id="selectedCount">0</span> / <span id="totalCount">0</span> files selected
+        </div>
+        <div id="fileList" class="file-list"></div>
+    </div>
+    
+    <footer>
+      <button id="selectAllBtn" class="btn btn-secondary">
+        <span>Select All</span>
+      </button>
+      <button id="downloadBtn" class="btn btn-primary" disabled>
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Download</span>
+      </button>
+    </footer>
   </div>
 </body>
 </html>
