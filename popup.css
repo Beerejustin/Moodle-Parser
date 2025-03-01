@@ -3,6 +3,8 @@
     --primary-hover: #4338ca;
     --secondary: #f3f4f6;
     --secondary-hover: #e5e7eb;
+    --accent: #ff5722;
+    --accent-hover: #e64a19;
     --success: #10b981;
     --success-hover: #059669;
     --text: #1f2937;
@@ -14,6 +16,11 @@
 
     --radius: 8px;
     --transition: 0.2s ease;
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,6 +29,8 @@
         --primary-hover: #818cf8;
         --secondary: #374151;
         --secondary-hover: #4b5563;
+        --accent: #ff7043;
+        --accent-hover: #ff5722;
         --success: #10b981;
         --success-hover: #34d399;
         --text: #f9fafb;
@@ -40,8 +49,7 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans",
-        "Helvetica Neue", sans-serif;
+    font-family: 'Inter', sans-serif;
     color: var(--text);
     background-color: var(--background);
     line-height: 1.5;
@@ -53,12 +61,15 @@ body {
     display: flex;
     flex-direction: column;
     height: 480px;
+    padding: var(--spacing-md);
+    box-shadow: 0 4px 8px var(--shadow);
+    background-color: var(--surface);
 }
 
 header {
     display: flex;
     align-items: center;
-    padding: 16px;
+    padding: var(--spacing-md);
     border-bottom: 1px solid var(--border);
 }
 
@@ -71,7 +82,7 @@ header {
     background-color: var(--primary);
     color: white;
     border-radius: var(--radius);
-    margin-right: 12px;
+    margin-right: var(--spacing-md);
 }
 
 h1 {
@@ -87,7 +98,7 @@ h1 {
 }
 
 .file-counter {
-    padding: 12px 16px;
+    padding: var(--spacing-md);
     color: var(--text-secondary);
     font-size: 13px;
     border-bottom: 1px solid var(--border);
@@ -96,23 +107,23 @@ h1 {
 .file-list {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 0;
+    padding: var(--spacing-sm) 0;
     background-color: var(--surface);
 }
 
 .file-item {
     display: flex;
     align-items: center;
-    padding: 8px 16px;
+    padding: var(--spacing-sm) var(--spacing-md);
     transition: background-color var(--transition);
 }
 
 .file-item:hover {
-    background-color: var(--secondary);
+    background-color: var(--secondary-hover);
 }
 
 .file-checkbox {
-    margin-right: 12px;
+    margin-right: var(--spacing-md);
     appearance: none;
     width: 18px;
     height: 18px;
@@ -141,7 +152,7 @@ h1 {
 }
 
 .file-icon {
-    margin-right: 12px;
+    margin-right: var(--spacing-md);
     color: var(--text-secondary);
 }
 
@@ -158,18 +169,18 @@ h1 {
     align-items: center;
     justify-content: center;
     height: 100%;
-    padding: 24px;
+    padding: var(--spacing-lg);
     text-align: center;
     color: var(--text-secondary);
 }
 
 .empty-state svg {
-    margin-bottom: 16px;
+    margin-bottom: var(--spacing-md);
     opacity: 0.5;
 }
 
 .empty-state p {
-    margin-bottom: 8px;
+    margin-bottom: var(--spacing-sm);
 }
 
 .empty-state .hint {
@@ -179,8 +190,8 @@ h1 {
 
 footer {
     display: flex;
-    gap: 8px;
-    padding: 16px;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
     border-top: 1px solid var(--border);
 }
 
@@ -188,8 +199,8 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 10px 16px;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
     border: none;
     border-radius: var(--radius);
     font-weight: 500;
@@ -246,10 +257,10 @@ footer {
 .section-header {
     display: flex;
     align-items: center;
-    padding: 8px 16px;
+    padding: var(--spacing-sm) var(--spacing-md);
     background-color: var(--surface);
     border-bottom: 1px solid var(--border);
-    margin-top: 16px;
+    margin-top: var(--spacing-md);
     cursor: pointer;
     transition: background 0.2s;
 }
@@ -265,28 +276,28 @@ footer {
 }
 
 .section-header h3 {
-    font: var(--text-body);
+    font-size: 16px;
     font-weight: 600;
     color: var(--text);
-    margin-left: 12px;
+    margin-left: var(--spacing-md);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .section {
-    margin-bottom: var(--space-sm);
-    border-radius: 12px;
+    margin-bottom: var(--spacing-sm);
+    border-radius: var(--radius);
     overflow: hidden;
     background-color: var(--background);
-    margin: var(--space-sm);
-    box-shadow: var(--elevation-1);
+    margin: var(--spacing-sm);
+    box-shadow: 0 2px 4px var(--shadow);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .section:hover {
     transform: translateY(-1px);
-    box-shadow: var(--elevation-2);
+    box-shadow: 0 4px 8px var(--shadow);
 }
 
 .section.collapsed .file-item {
@@ -294,7 +305,7 @@ footer {
 }
 
 .section-checkbox {
-    margin-right: 12px;
+    margin-right: var(--spacing-md);
     appearance: none;
     width: 18px;
     height: 18px;

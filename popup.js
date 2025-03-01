@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
     sections.forEach(section => {
       const sectionDiv = document.createElement("div");
-      sectionDiv.className = "section";
+      sectionDiv.className = "section collapsed"; // Start collapsed
   
       const sectionHeader = document.createElement("div");
       sectionHeader.className = "section-header";
