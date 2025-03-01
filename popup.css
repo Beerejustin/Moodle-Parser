@@ -133,6 +133,7 @@ h1 {
     cursor: pointer;
     position: relative;
     transition: all var(--transition);
+    flex-shrink: 0; /* Prevent the checkbox from shrinking */
 }
 
 .file-checkbox:checked,
@@ -284,6 +285,7 @@ footer {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    flex: 1; /* Allow the title to take up remaining space */
 }
 
 .section {
