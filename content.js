@@ -1,14 +1,20 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const fileLinks = [];
-    
-    document.querySelectorAll('a[href*="mod/resource/view.php?id="]').forEach(link => {
-      fileLinks.push({
-        url: link.href,
-        filename: link.innerText.trim() + ".pdf" // Adjust for different file types
+    const sections = [];
+  
+    document.querySelectorAll('.course-section-header').forEach(section => {
+      const sectionTitle = section.querySelector('h3 a').innerText.trim();
+      const fileLinks = [];
+      section.nextElementSibling.querySelectorAll('a[href*="mod/resource/view.php?id="]').forEach(link => {
+        fileLinks.push({
+          url: link.href,
+          filename: link.innerText.trim() + ".pdf"
+        });
       });
+      if (fileLinks.length > 0) {
+        sections.push({ title: sectionTitle, files: fileLinks });
+      }
     });
   
-    // Send links to background script
-    chrome.runtime.sendMessage({ action: "download_files", files: fileLinks });
+    // Send sections and their files to the popup
+    chrome.runtime.sendMessage({ action: "sections_data", sections: sections });
   });
-  
