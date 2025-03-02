@@ -3,7 +3,7 @@
   "name": "LearnWeb File Downloader",
   "version": "1.0",
   "description": "Automatically download all files from a LearnWeb page into organized folders.",
-  "permissions": ["downloads", "activeTab", "scripting", "storage", "notifications"],
+  "permissions": ["downloads", "activeTab", "scripting", "storage", "notifications","tabs"],
   "host_permissions": ["https://www.uni-muenster.de/LearnWeb/learnweb2/*"],
   "background": {
     "service_worker": "background.js"
