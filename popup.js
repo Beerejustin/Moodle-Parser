@@ -2,6 +2,14 @@
  * Event listener for DOMContentLoaded to initialize the popup.
  */
 document.addEventListener("DOMContentLoaded", () => {
+  // Set up listener for downloads completion message from background script
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === "downloads_completed") {
+      // Close the popup window
+      window.close()
+    }
+  })
+
   // Query the active tab and execute the extractFileLinks function
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (!tabs || !tabs[0] || !tabs[0].id) {
@@ -75,6 +83,13 @@ document.addEventListener("DOMContentLoaded", () => {
         })
       })
 
+      // Get unique sections count for folder naming
+      const uniqueSections = new Set()
+      selectedFiles.forEach(file => {
+        uniqueSections.add(file.section)
+      })
+      const totalSections = uniqueSections.size
+
       // Send message to background script to start downloads
       try {
         chrome.runtime.sendMessage(
@@ -82,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
             action: "download_files",
             files: selectedFiles,
             courseName: courseName,
+            totalSections: totalSections
           },
           (response) => {
             // Check for runtime error first
@@ -106,6 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   <div>
                     <p>Download started!</p>
                     <p class="text-sm text-muted-foreground">Files will be saved to: <span class="font-medium">${response.folderName}</span></p>
+                    <p class="text-sm text-muted-foreground">Popup will close automatically when downloads complete</p>
                   </div>
                 </div>
               `
@@ -120,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M5 13l4 4L19 7"></path>
                 </svg>
-                <span>Downloaded</span>
+                <span>Downloading...</span>
               `
 
               // Disable other controls
@@ -371,4 +388,3 @@ function sanitizeCourseName(name) {
     .replace(/[\u0000-\u001F\u007F-\u009F]/g, "_")
     .substring(0, 50) // Limit length to avoid very long folder names
 }
-

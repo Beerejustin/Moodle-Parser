@@ -4,7 +4,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // Extract course name from the first file's section or use default
       const courseName = message.courseName || "LearnWebCourse"
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-").substring(0, 19)
-      const mainFolderName = `${courseName}_${timestamp}`
+      // Enhanced folder naming with more descriptive format
+      const mainFolderName = `${courseName}_${message.totalSections}_sections_${message.files.length}_files_${timestamp}`
 
       // Group files by section
       const filesBySection = {}
@@ -14,28 +15,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           filesBySection[file.section] = []
         }
         filesBySection[file.section].push(file)
-      })
-
-      // Create a manifest file with download information
-      const manifest = {
-        courseName: courseName,
-        downloadDate: new Date().toISOString(),
-        sections: Object.keys(filesBySection).map((section) => ({
-          name: section,
-          files: filesBySection[section].map((file) => file.filename),
-        })),
-        totalFiles: message.files.length,
-      }
-
-      // Convert manifest to JSON string and create a data URL instead of using Blob
-      const manifestJson = JSON.stringify(manifest, null, 2)
-      const manifestDataUrl = "data:application/json;charset=utf-8," + encodeURIComponent(manifestJson)
-
-      // Download manifest file first
-      chrome.downloads.download({
-        url: manifestDataUrl,
-        filename: `${mainFolderName}/download-info.json`,
-        saveAs: false,
       })
 
       // Track downloads to show completion notification
@@ -74,7 +53,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (downloadIds.includes(delta.id) && delta.state && delta.state.current === "complete") {
           completedDownloads++
 
-          // If all downloads are complete, show notification
+          // If all downloads are complete, show notification and signal popup to close
           if (completedDownloads === totalDownloads) {
             chrome.downloads.onChanged.removeListener(downloadListener)
 
@@ -84,6 +63,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               title: "Downloads Complete",
               message: `All ${totalDownloads} files have been downloaded to the "${mainFolderName}" folder.`,
             })
+            
+            // Signal the popup to close itself
+            chrome.runtime.sendMessage({ action: "downloads_completed" })
           }
         }
       })
@@ -118,4 +100,3 @@ function sanitizeFilename(filename) {
     .replace(/[\s]+/g, "_") // Replace spaces with underscores
     .replace(/[\u0000-\u001F\u007F-\u009F]/g, "_") // Replace control characters with underscores
 }
-
