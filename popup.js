@@ -223,7 +223,7 @@ function extractFileLinks() {
           console.log("firstYear", firstYear);
           const secondYear = (parseInt(firstYear) + 1).toString().padStart(2, '0').slice(-2);
           console.log("secondYear", secondYear);
-          semester = `${semesterType} ${firstYear}/${secondYear}`;
+          semester = `${semesterType} ${firstYear}|${secondYear}`;
         }
       }
       }
