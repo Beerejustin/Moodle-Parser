@@ -377,11 +377,12 @@
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-md);
-    margin: var(--spacing-md);
+    margin: var(--spacing-md) 0; /* Adjusted margin to avoid misalignment */
     background-color: rgba(239, 68, 68, 0.1);
     border-left: 3px solid var(--error);
     border-radius: var(--radius);
     color: var(--text);
+    width: calc(100% - 2 * var(--spacing-md)); /* Ensure the error message fits within the container */
   }
   
   .error-message svg {
@@ -391,6 +392,5 @@
   
   .error-message p {
     font-size: 13px;
-  }
-  
+  }  
   

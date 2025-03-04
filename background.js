@@ -2,11 +2,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "download_files") {
     try {
       // Extract course name from the first file's section or use default
-      const courseName = message.courseName || "LearnWebCourse"
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-").substring(0, 19)
-      // Enhanced folder naming with more descriptive format
-      const mainFolderName = `${courseName}_${message.totalSections}_sections_${message.files.length}_files_${timestamp}`
-
+      const mainFolderName = message.courseName || "LearnWebCourse";
       // Group files by section
       const filesBySection = {}
 
