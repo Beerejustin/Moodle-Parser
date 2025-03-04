@@ -184,10 +184,59 @@ function extractFileLinks() {
     const sections = [];
     const sectionHeaders = document.querySelectorAll(".course-section-header");
 
-    const pageTitleElement = document.querySelector("h1.page-title");
+    const breadcrumbElements = document.querySelectorAll("ol.breadcrumb li.breadcrumb-item");
+    const breadcrumbDate = Array.from(breadcrumbElements).map(element => element.innerText.trim());
+  
+    let pageTitleElement = "";
+    let courseSemsterDate = "";
+    let semester = "";
+
+    console.log("breadcrumbDate", breadcrumbDate);
+    
+    if (breadcrumbDate) {
+      courseSemsterDate = breadcrumbDate[2];
+      console.log("courseInfoText", courseSemsterDate);
+      console.log("breadcrumbDate[3]", breadcrumbDate[3]);
+      if (breadcrumbDate[3]) {
+      // Get the course name from breadcrumbDate[3]
+      pageTitleElement = breadcrumbDate[3];
+      
+      // Clean up: remove year/number patterns
+      pageTitleElement = pageTitleElement.replace(/[-_]?\d+_?\d*$/g, '');
+      
+      // Check for semester type in courseInfoText
+      const semesterRegex = /(WiSe|SoSe)/i;
+      const semesterMatch = courseSemsterDate.split(semesterRegex);
+      
+      // Add semester type suffix based on match
+      if (semesterMatch) {
+        const semesterType = semesterMatch[1].toUpperCase();
+        if (semesterType === 'SOSE') {
+          const year = semesterMatch[2].length === 4 ? semesterMatch[2].substring(2) : semesterMatch[2];
+          semester = `${semesterType} ${year}`;
+        } else if (semesterType === 'WISE') {
+          console.log("semesterMatch[2]", semesterMatch[2]);
+            const yearStr = semesterMatch[2];
+            const firstYear = yearStr.includes('/') ? 
+            yearStr.split('/')[0].slice(-2) : 
+            (yearStr.length === 4 ? yearStr.substring(2) : yearStr);
+          console.log("firstYear", firstYear);
+          const secondYear = (parseInt(firstYear) + 1).toString().padStart(2, '0').slice(-2);
+          console.log("secondYear", secondYear);
+          semester = `${semesterType} ${firstYear}/${secondYear}`;
+        }
+      }
+      }
+    }
+    
+    if (semester) {
+      pageTitleElement += ` - ${semester}`;
+    }
+
+    let courseName = "LearnWebCourse";
     if (pageTitleElement) {
       // Use the full page title as the course name
-      courseName = pageTitleElement.innerText.trim();
+      courseName = pageTitleElement.trim();
     }
 
     if (sectionHeaders.length === 0) {
