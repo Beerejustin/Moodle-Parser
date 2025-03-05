@@ -190,13 +190,9 @@ function extractFileLinks() {
     let pageTitleElement = "";
     let courseSemsterDate = "";
     let semester = "";
-
-    console.log("breadcrumbDate", breadcrumbDate);
     
     if (breadcrumbDate) {
       courseSemsterDate = breadcrumbDate[2];
-      console.log("courseInfoText", courseSemsterDate);
-      console.log("breadcrumbDate[3]", breadcrumbDate[3]);
       if (breadcrumbDate[3]) {
       // Get the course name from breadcrumbDate[3]
       pageTitleElement = breadcrumbDate[3];
@@ -215,14 +211,11 @@ function extractFileLinks() {
           const year = semesterMatch[2].length === 4 ? semesterMatch[2].substring(2) : semesterMatch[2];
           semester = `${semesterType} ${year}`;
         } else if (semesterType === 'WISE') {
-          console.log("semesterMatch[2]", semesterMatch[2]);
             const yearStr = semesterMatch[2];
             const firstYear = yearStr.includes('/') ? 
             yearStr.split('/')[0].slice(-2) : 
             (yearStr.length === 4 ? yearStr.substring(2) : yearStr);
-          console.log("firstYear", firstYear);
           const secondYear = (parseInt(firstYear) + 1).toString().padStart(2, '0').slice(-2);
-          console.log("secondYear", secondYear);
           semester = `${semesterType} ${firstYear}|${secondYear}`;
         }
       }
