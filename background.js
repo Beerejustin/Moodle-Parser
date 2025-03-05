@@ -26,6 +26,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           const originalFilename = file.filename
           const sanitizedFilename = sanitizeFilename(originalFilename)
 
+          console.log(`Original filename: ${originalFilename}`)
+          console.log(`Sanitized filename: ${sanitizedFilename}`)
+
           chrome.downloads.download(
             {
               url: file.url,
@@ -91,8 +94,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  * @returns {string} - The sanitized filename.
  */
 function sanitizeFilename(filename) {
-  return filename
+  const sanitized = filename
     .replace(/[<>:"/\\|?*]+/g, "_") // Replace invalid characters with underscores
     .replace(/[\s]+/g, "_") // Replace spaces with underscores
+    .replace(/[.,]+/g, "_") // Replace dots and commas with underscores
     .replace(/[\u0000-\u001F\u007F-\u009F]/g, "_") // Replace control characters with underscores
+    .replace(/[+]+/g, "_") // Replace plus signs with underscores
+    .replace(/_+/g, "_") // Replace multiple underscores with a single underscore
+    .replace(/^_|_$/g, ""); // Remove leading or trailing underscores
+
+  console.log(`Sanitized filename: ${sanitized}`);
+  return sanitized;
 }
