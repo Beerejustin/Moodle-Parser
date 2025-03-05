@@ -53,97 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     updateFileCounter();
   });
-
-  // Event listener for the "Download" button
-  document.getElementById("downloadBtn").addEventListener("click", () => {
-    const downloadBtn = document.getElementById("downloadBtn");
-    const originalBtnText = downloadBtn.innerHTML;
-    downloadBtn.innerHTML = `
-      <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      Preparing...
-    `;
-    downloadBtn.disabled = true;
-
-    const selectedFiles = [];
-    document.querySelectorAll(".file-checkbox:checked").forEach((checkbox) => {
-      selectedFiles.push({
-        url: checkbox.dataset.url,
-        filename: checkbox.dataset.filename,
-        section: checkbox.dataset.section || "General",
-      });
-    });
-
-    const uniqueSections = new Set();
-    selectedFiles.forEach((file) => {
-      uniqueSections.add(file.section);
-    });
-    const totalSections = uniqueSections.size;
-
-    Name = document.getElementById("courseName").textContent;
-
-    try {
-      chrome.runtime.sendMessage(
-        {
-          action: "download_files",
-          files: selectedFiles,
-          courseName: Name,
-          totalSections: totalSections,
-        },
-        (response) => {
-          if (chrome.runtime.lastError) {
-            console.error("Message sending error:", chrome.runtime.lastError);
-            showErrorMessage("Communication error: " + chrome.runtime.lastError.message);
-            downloadBtn.innerHTML = originalBtnText;
-            downloadBtn.disabled = false;
-            return;
-          }
-
-          if (response && response.success) {
-            const downloadInfo = document.createElement("div");
-            downloadInfo.className = "download-info";
-            downloadInfo.innerHTML = `
-              <div class="success-message">
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                <div>
-                  <p>Download started!</p>
-                  <p class="text-sm text-muted-foreground">Files will be saved to: <span class="font-medium">${response.folderName}</span></p>
-                  <p class="text-sm text-muted-foreground">Popup will close automatically when downloads complete</p>
-                </div>
-              </div>
-            `;
-
-            const fileList = document.querySelector(".file-list");
-            fileList.innerHTML = "";
-            fileList.appendChild(downloadInfo);
-
-            downloadBtn.innerHTML = `
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 13l4 4L19 7"></path>
-              </svg>
-              <span>Downloading...</span>
-            `;
-
-            document.getElementById("selectAllBtn").disabled = true;
-          } else {
-            showErrorMessage(response && response.error ? response.error : "Unknown error occurred");
-            downloadBtn.innerHTML = originalBtnText;
-            downloadBtn.disabled = false;
-          }
-        }
-      );
-    } catch (error) {
-      console.error("Error sending message:", error);
-      showErrorMessage("Failed to start download: " + error.message);
-      downloadBtn.innerHTML = originalBtnText;
-      downloadBtn.disabled = false;
-    }
-  });
 });
 
 /**
@@ -174,6 +83,195 @@ function showErrorMessage(message) {
     alert(message);
   }
 }
+
+// Add this function after the showErrorMessage function
+
+/**
+ * Creates and displays a download progress UI
+ */
+function createDownloadProgressUI() {
+  const fileList = document.querySelector(".file-list");
+  
+  // Create progress container
+  const progressContainer = document.createElement("div");
+  progressContainer.className = "download-progress";
+  progressContainer.innerHTML = `
+    <div class="progress-header">
+      <h3>Downloading Files</h3>
+      <span class="progress-percentage">0%</span>
+    </div>
+    <div class="progress-bar-container">
+      <div class="progress-bar" style="width: 0%"></div>
+    </div>
+    <div class="progress-details">
+      <p class="current-file">Preparing...</p>
+      <p class="file-counter"><span id="downloadsComplete">0</span> of <span id="downloadsTotal">0</span> files</p>
+    </div>
+    <div class="file-progress-list"></div>
+  `;
+  
+  fileList.innerHTML = '';
+  fileList.appendChild(progressContainer);
+  
+  return {
+    updateProgress: function(data) {
+      const progressBar = document.querySelector(".progress-bar");
+      const progressPercentage = document.querySelector(".progress-percentage");
+      const currentFile = document.querySelector(".current-file");
+      const downloadsComplete = document.getElementById("downloadsComplete");
+      const downloadsTotal = document.getElementById("downloadsTotal");
+      
+      if (progressBar) progressBar.style.width = `${data.percentage}%`;
+      if (progressPercentage) progressPercentage.textContent = `${data.percentage}%`;
+      if (currentFile) {
+        if (data.status === "complete") {
+          currentFile.textContent = `Completed: ${data.currentFile}`;
+          currentFile.classList.add("completed-file");
+        } else if (data.status === "failed") {
+          currentFile.textContent = `Failed: ${data.currentFile}`;
+          currentFile.classList.add("failed-file");
+        } else {
+          currentFile.textContent = `Downloading: ${data.currentFile}`;
+          currentFile.classList.remove("completed-file", "failed-file");
+        }
+      }
+      
+      if (downloadsComplete) downloadsComplete.textContent = data.completed;
+      if (downloadsTotal) downloadsTotal.textContent = data.total;
+      
+      // Update file in the list or add it if not present
+      this.updateFileInList(data.currentFile, data.status, data.percentage);
+    },
+    
+    updateFileInList: function(filename, status, percentage = 0) {
+      if (!filename) return;
+      
+      const fileProgressList = document.querySelector(".file-progress-list");
+      let fileItem = document.querySelector(`.file-progress-item[data-filename="${filename}"]`);
+      
+      if (!fileItem && fileProgressList) {
+        fileItem = document.createElement("div");
+        fileItem.className = "file-progress-item";
+        fileItem.dataset.filename = filename;
+        
+        const fileIcon = document.createElement("div");
+        fileIcon.className = "file-icon mini";
+        fileIcon.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>`;
+        
+        const fileText = document.createElement("div");
+        fileText.className = "file-text";
+        fileText.textContent = filename;
+        
+        const fileStatus = document.createElement("div");
+        fileStatus.className = "file-status";
+        
+        fileItem.appendChild(fileIcon);
+        fileItem.appendChild(fileText);
+        fileItem.appendChild(fileStatus);
+        fileProgressList.appendChild(fileItem);
+      }
+      
+      if (fileItem) {
+        const fileStatus = fileItem.querySelector(".file-status");
+        if (fileStatus) {
+          if (status === "complete") {
+            fileStatus.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            fileItem.classList.add("completed");
+          } else if (status === "failed") {
+            fileStatus.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+            fileItem.classList.add("failed");
+          } else {
+            fileStatus.textContent = `${percentage}%`;
+          }
+        }
+      }
+    }
+  };
+}
+
+// Modify the event listener for the download button
+document.getElementById("downloadBtn").addEventListener("click", () => {
+  const downloadBtn = document.getElementById("downloadBtn");
+  const originalBtnText = downloadBtn.innerHTML;
+  downloadBtn.innerHTML = `
+    <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    Preparing...
+  `;
+  downloadBtn.disabled = true;
+
+  const selectedFiles = [];
+  document.querySelectorAll(".file-checkbox:checked").forEach((checkbox) => {
+    selectedFiles.push({
+      url: checkbox.dataset.url,
+      filename: checkbox.dataset.filename,
+      section: checkbox.dataset.section || "General",
+    });
+  });
+
+  const uniqueSections = new Set();
+  selectedFiles.forEach((file) => {
+    uniqueSections.add(file.section);
+  });
+  const totalSections = uniqueSections.size;
+
+  Name = document.getElementById("courseName").textContent;
+
+  try {
+    // Create progress UI before sending download message
+    const progressUI = createDownloadProgressUI();
+    
+    // Modify the onMessage listener to track download progress
+    chrome.runtime.onMessage.addListener((message) => {
+      if (message.action === "download_progress") {
+        progressUI.updateProgress(message);
+      } else if (message.action === "file_progress") {
+        // Update individual file progress
+        progressUI.updateFileInList(message.filename, "downloading", message.progress);
+      }
+    });
+
+    chrome.runtime.sendMessage(
+      {
+        action: "download_files",
+        files: selectedFiles,
+        courseName: Name,
+        totalSections: totalSections,
+      },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Message sending error:", chrome.runtime.lastError);
+          showErrorMessage("Communication error: " + chrome.runtime.lastError.message);
+          downloadBtn.innerHTML = originalBtnText;
+          downloadBtn.disabled = false;
+          return;
+        }
+
+        if (response && response.success) {
+          downloadBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Downloading...</span>
+          `;
+
+          document.getElementById("selectAllBtn").disabled = true;
+        } else {
+          showErrorMessage(response && response.error ? response.error : "Unknown error occurred");
+          downloadBtn.innerHTML = originalBtnText;
+          downloadBtn.disabled = false;
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Error sending message:", error);
+    showErrorMessage("Failed to start download: " + error.message);
+    downloadBtn.innerHTML = originalBtnText;
+    downloadBtn.disabled = false;
+  }
+});
 
 /**
  * Extracts file links from the current page.

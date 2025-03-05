@@ -17,6 +17,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       let completedDownloads = 0
       const totalDownloads = message.files.length
       const downloadIds = []
+      const downloadTracking = {} // Track each download by ID
+
+      // Send initial progress update
+      chrome.runtime.sendMessage({
+        action: "download_progress",
+        completed: 0,
+        total: totalDownloads,
+        percentage: 0,
+        currentFile: "Preparing downloads...",
+        status: "initializing"
+      });
 
       // Download each file in its section folder
       Object.keys(filesBySection).forEach((section) => {
@@ -47,9 +58,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           // Ensure extension is lowercase
           finalFilename = finalFilename.replace(/\.PDF$/i, '.pdf');
 
-          console.log(`Original filename: ${originalFilename}`)
-          console.log(`Sanitized filename: ${finalFilename}`)
-          console.log(`Full path: ${mainFolderName}/${sectionFolder}/${finalFilename}`)
+          // Store original filename for progress reporting
+          downloadTracking[originalFilename] = { status: "pending", progress: 0 };
 
           // Try to download with full path
           tryDownload({
@@ -63,10 +73,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             ],
             onSuccess: (id) => {
               downloadIds.push(id);
+              // Track this download ID with filename
+              downloadTracking[originalFilename].id = id;
+              downloadTracking[originalFilename].status = "downloading";
+              
+              // Report that download has started
+              chrome.runtime.sendMessage({
+                action: "download_progress",
+                currentFile: originalFilename,
+                status: "downloading",
+                fileIndex: completedDownloads,
+                completed: completedDownloads,
+                total: totalDownloads,
+                percentage: Math.round((completedDownloads / totalDownloads) * 100)
+              });
             },
             onAllFailed: () => {
               // Count failed downloads to avoid waiting forever
               completedDownloads++;
+              downloadTracking[originalFilename].status = "failed";
+              
+              // Update progress even for failed downloads
+              chrome.runtime.sendMessage({
+                action: "download_progress",
+                currentFile: originalFilename,
+                status: "failed",
+                completed: completedDownloads,
+                total: totalDownloads,
+                percentage: Math.round((completedDownloads / totalDownloads) * 100)
+              });
+              
               console.error(`All download attempts failed for ${originalFilename}`);
             }
           });
@@ -75,22 +111,65 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       // Set up a listener for download completion
       chrome.downloads.onChanged.addListener(function downloadListener(delta) {
-        if (downloadIds.includes(delta.id) && delta.state && delta.state.current === "complete") {
-          completedDownloads++
-
-          // If all downloads are complete, show notification and signal popup to close
-          if (completedDownloads === totalDownloads) {
-            chrome.downloads.onChanged.removeListener(downloadListener)
-
-            chrome.notifications.create({
-              type: "basic",
-              iconUrl: "logo128.png",
-              title: "Downloads Complete",
-              message: `All ${totalDownloads} files have been downloaded to the "${mainFolderName}" folder.`,
-            })
+        if (downloadIds.includes(delta.id)) {
+          // Find which file this ID corresponds to
+          let currentFile = "Unknown file";
+          for (const [filename, data] of Object.entries(downloadTracking)) {
+            if (data.id === delta.id) {
+              currentFile = filename;
+              break;
+            }
+          }
+          
+          // Track download progress if we have bytesReceived info
+          if (delta.bytesReceived) {
+            const fileProgress = delta.bytesReceived.current;
+            const fileTotal = delta.totalBytes?.current || 0;
             
-            // Signal the popup to close itself
-            chrome.runtime.sendMessage({ action: "downloads_completed" })
+            if (fileTotal > 0) {
+              const filePercentage = Math.round((fileProgress / fileTotal) * 100);
+              downloadTracking[currentFile].progress = filePercentage;
+              
+              // Send individual file progress update
+              chrome.runtime.sendMessage({
+                action: "file_progress",
+                filename: currentFile,
+                progress: filePercentage
+              });
+            }
+          }
+          
+          if (delta.state && delta.state.current === "complete") {
+            completedDownloads++;
+            downloadTracking[currentFile].status = "complete";
+            
+            // Send overall progress update
+            chrome.runtime.sendMessage({
+              action: "download_progress",
+              currentFile: currentFile,
+              status: "complete",
+              completed: completedDownloads,
+              total: totalDownloads,
+              percentage: Math.round((completedDownloads / totalDownloads) * 100)
+            });
+
+            // If all downloads are complete, show notification and signal popup to close
+            if (completedDownloads === totalDownloads) {
+              chrome.downloads.onChanged.removeListener(downloadListener)
+
+              chrome.notifications.create({
+                type: "basic",
+                iconUrl: "logo128.png",
+                title: "Downloads Complete",
+                message: `All ${totalDownloads} files have been downloaded to the "${mainFolderName}" folder.`,
+              })
+              
+              // Signal the popup to close itself
+              chrome.runtime.sendMessage({ 
+                action: "downloads_completed",
+                status: "complete"
+              })
+            }
           }
         }
       })
@@ -112,7 +191,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   // Return true to indicate we'll send a response asynchronously
   return true
-})
+});
 
 /**
  * Attempts to download a file with multiple fallback paths if initial attempts fail
